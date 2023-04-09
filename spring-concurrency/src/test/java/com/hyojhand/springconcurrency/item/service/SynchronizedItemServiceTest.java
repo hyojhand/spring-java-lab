@@ -3,7 +3,6 @@ package com.hyojhand.springconcurrency.item.service;
 import com.hyojhand.springconcurrency.item.domain.Item;
 import com.hyojhand.springconcurrency.item.exception.ItemNotExistException;
 import com.hyojhand.springconcurrency.item.repository.ItemRepository;
-import com.hyojhand.springconcurrency.item.structure.NamedLockStructure;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,10 +19,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 @Slf4j
-public class NamedLockItemServiceTest {
+class SynchronizedItemServiceTest {
 
     @Autowired
-    private NamedLockStructure namedLockStructure;
+    private SynchronizedItemService itemService;
 
     @Autowired
     private ItemRepository itemRepository;
@@ -42,20 +41,20 @@ public class NamedLockItemServiceTest {
     }
 
     @Test
-    @DisplayName("네임드 락 적용 - 동시에 100개의 아이템 구매 요청 테스트")
-    public void buyItem_NamedLock_Test() throws InterruptedException {
+    @DisplayName("synchronized 적용 - 동시에 100개의 아이템 구매 요청 테스트")
+    void buyItem_Synchronized_Test() throws InterruptedException {
         int threadCount = 100;
 
+        // 멀티스레드 이용 ExecutorService : 비동기를 단순하게 처리할 수 있도록 해주는 java api
         ExecutorService executorService = Executors.newFixedThreadPool(32);
+
+        // 다른 스레드에서 수행이 완료될 때 까지 대기할 수 있도록 도와주는 API, 요청이 끝날때 까지 기다림
         CountDownLatch countDownLatch = new CountDownLatch(threadCount);
 
         for (int i = 0; i < threadCount; i++) {
             executorService.submit(() -> {
-                        try {
-                            namedLockStructure.namedLockBuyItem(1L, 3000, 1L);
-                        } finally {
-                            countDownLatch.countDown();
-                        }
+                        itemService.buyItem(1L, 1L);
+                        countDownLatch.countDown();
                     }
             );
         }
